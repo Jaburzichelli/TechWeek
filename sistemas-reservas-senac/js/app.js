@@ -970,3 +970,188 @@ document.addEventListener('DOMContentLoaded', () => {
 window.App = App;
 window.Modal = Modal;
 window.Toast = Toast;
+
+// ============================================
+// CALENDÁRIO FUNCIONAL
+// ============================================
+const Calendar = {
+    currentDate: new Date(),
+    currentMonth: new Date().getMonth(),
+    currentYear: new Date().getFullYear(),
+
+    init() {
+        this.render();
+        this.setupControls();
+    },
+
+    setupControls() {
+        const prevBtn = document.querySelector('.calendar-controls .btn-icon:first-child');
+        const nextBtn = document.querySelector('.calendar-controls .btn-icon:last-child');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                this.previousMonth();
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                this.nextMonth();
+            });
+        }
+    },
+
+    previousMonth() {
+        this.currentMonth--;
+        if (this.currentMonth < 0) {
+            this.currentMonth = 11;
+            this.currentYear--;
+        }
+        this.render();
+    },
+
+    nextMonth() {
+        this.currentMonth++;
+        if (this.currentMonth > 11) {
+            this.currentMonth = 0;
+            this.currentYear++;
+        }
+        this.render();
+    },
+
+    getMonthName(month) {
+        const months = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        return months[month];
+    },
+
+    getDaysInMonth(month, year) {
+        return new Date(year, month + 1, 0).getDate();
+    },
+
+    getFirstDayOfMonth(month, year) {
+        return new Date(year, month, 1).getDay();
+    },
+
+    formatDateForComparison(day, month, year) {
+        const d = String(day).padStart(2, '0');
+        const m = String(month + 1).padStart(2, '0');
+        return `${d}/${m}/${year}`;
+    },
+
+    getReservationsForDate(date) {
+        const reservations = DataStore.getReservations();
+        return reservations.filter(r => r.date === date);
+    },
+
+    render() {
+        const monthNameElement = document.querySelector('.calendar-month');
+        const calendarBody = document.querySelector('.calendar-body');
+
+        if (!monthNameElement || !calendarBody) return;
+
+        // Atualizar nome do mês
+        monthNameElement.textContent = `${this.getMonthName(this.currentMonth)} ${this.currentYear}`;
+
+        // Limpar calendário
+        calendarBody.innerHTML = '';
+
+        const daysInMonth = this.getDaysInMonth(this.currentMonth, this.currentYear);
+        const firstDay = this.getFirstDayOfMonth(this.currentMonth, this.currentYear);
+        const today = new Date();
+        const isCurrentMonth = this.currentMonth === today.getMonth() && this.currentYear === today.getFullYear();
+
+        // Adicionar dias vazios antes do primeiro dia
+        for (let i = 0; i < firstDay; i++) {
+            const emptyDay = document.createElement('div');
+            emptyDay.className = 'calendar-day calendar-day-empty';
+            calendarBody.appendChild(emptyDay);
+        }
+
+        // Adicionar dias do mês
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = this.formatDateForComparison(day, this.currentMonth, this.currentYear);
+            const reservations = this.getReservationsForDate(dateStr);
+            const hasReservations = reservations.length > 0;
+            const isToday = isCurrentMonth && day === today.getDate();
+
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            
+            if (isToday) {
+                dayElement.classList.add('calendar-day-today');
+            }
+            
+            if (hasReservations) {
+                dayElement.classList.add('calendar-day-reserved');
+                dayElement.style.cursor = 'pointer';
+                dayElement.title = `${reservations.length} reserva(s)`;
+                
+                // Adicionar evento de clique
+                dayElement.addEventListener('click', () => {
+                    this.showReservationsModal(dateStr, reservations);
+                });
+            }
+
+            dayElement.innerHTML = `
+                ${day}
+                ${hasReservations ? '<span class="day-indicator"></span>' : ''}
+            `;
+
+            calendarBody.appendChild(dayElement);
+        }
+    },
+
+    showReservationsModal(date, reservations) {
+        const reservationsList = reservations.map(r => `
+            <div class="reservation-item" style="margin-bottom: 16px; padding: 16px; background: var(--gray-50); border-radius: 8px; cursor: pointer;" onclick="App.viewReservation(${r.id})">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <strong style="color: var(--gray-800)">${r.title}</strong>
+                    <span class="badge badge-${r.status}">${App.getStatusText(r.status)}</span>
+                </div>
+                <div style="font-size: 13px; color: var(--gray-600); margin-bottom: 4px;">
+                    📍 ${r.spaceName}
+                </div>
+                <div style="font-size: 13px; color: var(--gray-600);">
+                    🕐 ${r.startTime} - ${r.endTime} • 👤 ${r.requestor}
+                </div>
+            </div>
+        `).join('');
+
+        const content = `
+            <div class="modal-header">
+                <h2>📅 Reservas do Dia ${date}</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; color: var(--gray-600);">
+                    <strong>${reservations.length}</strong> ${reservations.length === 1 ? 'reserva encontrada' : 'reservas encontradas'}
+                </p>
+                ${reservationsList}
+                <div class="modal-actions" style="margin-top: 24px;">
+                    <button class="btn btn-primary" data-action="new-reservation" onclick="Modal.close(); App.openNewReservationModal();">
+                        ➕ Nova Reserva
+                    </button>
+                    <button class="btn btn-secondary" onclick="Modal.close()">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        `;
+
+        Modal.open('calendarReservationsModal', content);
+    }
+};
+
+// Atualizar a função initDashboard do App
+App.initDashboard = function() {
+    console.log('Dashboard iniciado');
+    this.updateDashboardStats();
+    this.loadRecentReservations();
+    
+    // Inicializar calendário
+    setTimeout(() => {
+        Calendar.init();
+    }, 100);
+};

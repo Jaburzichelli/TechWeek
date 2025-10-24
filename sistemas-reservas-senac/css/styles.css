@@ -2261,3 +2261,123 @@ body {
         display: none !important;
     }
 }
+
+/* === CALENDAR ENHANCEMENTS === */
+.calendar-day {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.calendar-day:not(.calendar-day-empty):not(.calendar-day-today):hover {
+    background: var(--gray-200) !important;
+    transform: scale(1.1);
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.calendar-day-reserved {
+    border: 2px solid var(--secondary) !important;
+    font-weight: 600;
+}
+
+.calendar-day-reserved:hover {
+    background: rgba(247, 148, 29, 0.1) !important;
+    border-color: var(--secondary-dark) !important;
+}
+
+.calendar-day-today {
+    background: var(--primary) !important;
+    color: var(--white);
+    font-weight: 700;
+}
+
+.calendar-day-today:hover {
+    background: var(--primary-dark) !important;
+}
+
+.day-indicator {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--secondary);
+}
+
+.calendar-day-today .day-indicator {
+    background: var(--white);
+}
+
+.calendar-controls .btn-icon {
+    transition: all 0.2s ease;
+}
+
+.calendar-controls .btn-icon:hover {
+    background: var(--primary);
+    color: var(--white);
+    transform: scale(1.1);
+}
+
+.calendar-controls .btn-icon:active {
+    transform: scale(0.95);
+}
+
+/* Animação ao mudar de mês */
+.calendar-body {
+    animation: fadeInCalendar 0.3s ease;
+}
+
+@keyframes fadeInCalendar {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tooltip personalizado para dias com reserva */
+.calendar-day-reserved::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: var(--gray-800);
+    color: var(--white);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.calendar-day-reserved:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+}
+
+/* Indicador de múltiplas reservas */
+.calendar-day[data-reservations]::after {
+    content: attr(data-reservations);
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--danger);
+    color: var(--white);
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
